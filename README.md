@@ -1,52 +1,51 @@
-    `import "."`
+# Overview
 
-    Overview
-    Index
-    Examples
+Publish Subscribe with go channels
 
-## Overview ▹
+This library provie the pub/sub pattern to the go routines
 
-## Overview ▾
+# Index
 
-## Index ▹
-
-## Index ▾
-
-    func NewPubSub() *exchange
+    type Exchange
+    &nbsp_place_holder; &nbsp_place_holder; func NewPubSub() *Exchange
+    &nbsp_place_holder; &nbsp_place_holder; func (c *Exchange) Publish(data interface{})
+    &nbsp_place_holder; &nbsp_place_holder; func (c *Exchange) Subscribe() *Subscription
+    &nbsp_place_holder; &nbsp_place_holder; func (c *Exchange) Subscriptors() int
     type Subscription
     &nbsp_place_holder; &nbsp_place_holder; func (s *Subscription) Unsubscribe()
 
-#### Examples
 
-    NewPubSub
-
-#### Package files
+# Package files
 
 [pub_sub.go](/target/pub_sub.go)
 
-## func [NewPubSub](/target/pub_sub.go?s=347:373#L14)
+## type [Exchange](/target/pub_sub.go?s=157:225#L2)
 
-    
-    func NewPubSub() *exchange
+
+    type Exchange struct {
+        [sync](/pkg/sync/).[Mutex](/pkg/sync/#Mutex)
+        // contains filtered or unexported fields
+    }
+
+### func [NewPubSub](/target/pub_sub.go?s=346:372#L13)
+
+
+####    func NewPubSub() *Exchange
 
 Create a new Publish/Subscribe Channel
 
-▹ Example
+Example:
 
-▾ Example
 
-Code:
-
-    
     // We create a exchange channel
     channel := NewPubSub()
-    
+
     // If we publish, the message will be lost
     channel.Publish("Hello World")
-    
+
     // So lets do a few subscribers
     for i := 0; i < 3; i++ {
-    
+
         go func() {
             // We need a subscription
             subscription := channel.Subscribe()
@@ -62,38 +61,68 @@ Code:
             subscription.Unsubscribe()
         }()
     }
-    
+
     runtime.Gosched() //Need to allocate the subscribers
     // And start publish messages
     for channel.Subscriptors() != 0 {
         _ = <-time.After(time.Second)
         channel.Publish("hey")
     }
-    
-    
 
-Output:
+    Output:
 
-    
     hey
     hey
     hey
     hey
     hey
     hey
-    
 
-## type [Subscription](/target/pub_sub.go?s=228:303#L8)
 
-    
+### func (*Exchange) [Publish](/target/pub_sub.go?s=1509:1553#L60)
+
+
+    func (c *Exchange) Publish(data interface{})
+
+Publish a message into the channel (Broadcast) It will go to all the
+subscriptions and send individually the message It will block until all the
+subscriptors recive the message You may want to launch this in its independent
+gorutine
+
+
+    go channel.Publish("msg")
+
+
+### func (*Exchange) [Subscribe](/target/pub_sub.go?s=948:992#L42)
+
+
+    func (c *Exchange) Subscribe() *Subscription
+
+Subscribe to channel
+
+
+    subscription := channel.Subscribe()
+    msg := <- sbuscription.C
+
+
+### func (*Exchange) [Subscriptors](/target/pub_sub.go?s=1154:1191#L49)
+
+
+    func (c *Exchange) Subscriptors() [int](/pkg/builtin/#int)
+
+Subscriptors return the number of subscriptors
+
+## type [Subscription](/target/pub_sub.go?s=227:302#L7)
+
+
     type Subscription struct {
         C chan (interface{})
         // contains filtered or unexported fields
     }
 
-### func (*Subscription) [Unsubscribe](/target/pub_sub.go?s=1727:1763#L70)
+### func (*Subscription) [Unsubscribe](/target/pub_sub.go?s=1729:1765#L70)
 
-    
+
     func (s *Subscription) Unsubscribe()
 
 Unbscribe the subscription This step is necessary to skip memory leaks

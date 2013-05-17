@@ -3,30 +3,29 @@
 // Publish Subscribe with go channels
 //
 // This library provie the pub/sub pattern to the go routines
-
 package pub_sub
 
 import (
 	"sync"
 )
 
-type exchange struct {
+type Exchange struct {
 	sync.Mutex
 	subscriptors [](*Subscription)
 }
 
 type Subscription struct {
 	C       chan (interface{})
-	channel *exchange
+	channel *Exchange
 }
 
 // Create a new Publish/Subscribe Channel
-func NewPubSub() *exchange {
-	channel := &exchange{subscriptors: make([](*Subscription), 0)}
+func NewPubSub() *Exchange {
+	channel := &Exchange{subscriptors: make([](*Subscription), 0)}
 	return channel
 }
 
-func (c *exchange) unsubscribe(s *Subscription) {
+func (c *Exchange) unsubscribe(s *Subscription) {
 	c.Lock()
 	for i, subscriber := range c.subscriptors {
 		if subscriber == s {
@@ -39,7 +38,7 @@ func (c *exchange) unsubscribe(s *Subscription) {
 	c.Unlock()
 }
 
-func (c *exchange) subscribe(s *Subscription) {
+func (c *Exchange) subscribe(s *Subscription) {
 	c.Lock()
 	c.subscriptors = append(c.subscriptors, s)
 	c.Unlock()
@@ -50,14 +49,14 @@ func (c *exchange) subscribe(s *Subscription) {
 //     subscription := channel.Subscribe()
 //     msg := <- sbuscription.C
 //
-func (c *exchange) Subscribe() *Subscription {
+func (c *Exchange) Subscribe() *Subscription {
 	subscription := &Subscription{make(chan interface{}), c}
 	c.subscribe(subscription)
 	return subscription
 }
 
 // Subscriptors return the number of subscriptors
-func (c *exchange) Subscriptors() int {
+func (c *Exchange) Subscriptors() int {
 	return len(c.subscriptors)
 }
 
@@ -67,7 +66,8 @@ func (c *exchange) Subscriptors() int {
 // You may want to launch this in its independent gorutine
 //
 //     go channel.Publish("msg")
-func (c *exchange) Publish(data interface{}) {
+//
+func (c *Exchange) Publish(data interface{}) {
 	c.Lock()
 	for _, subscriber := range c.subscriptors {
 		subscriber.C <- data
