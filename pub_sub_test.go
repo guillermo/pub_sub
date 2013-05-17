@@ -24,7 +24,7 @@ func ExampleNewPubSub() {
 	channel.Publish("hola")
 	channel.Publish("adios")
 	runtime.Gosched()
-	channel.Finish()
+	channel.Stop()
 
 	// Output:
 	// 0 hola

@@ -39,7 +39,7 @@ func reciver(e *Exchange) {
 	}
 }
 
-// NewPubSub returns a new exchagen
+// NewPubSub returns a new exchange
 func NewPubSub() *Exchange {
 	exchange := new(Exchange)
 	exchange.subscribeChan = make(chan *Subscription)
@@ -85,6 +85,6 @@ func (s *Subscription) Unsubscribe() {
 }
 
 // Stop the gorutine for the Exchange
-func (e *Exchange) Finish() {
+func (e *Exchange) Stop() {
 	e.closeChannel <- true
 }
