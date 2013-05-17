@@ -7,27 +7,27 @@ This library provie the pub/sub pattern to the go routines
 # Index
 
     type Exchange
-    &nbsp_place_holder; &nbsp_place_holder; func NewPubSub() *Exchange
-    &nbsp_place_holder; &nbsp_place_holder; func (c *Exchange) Publish(data interface{})
-    &nbsp_place_holder; &nbsp_place_holder; func (c *Exchange) Subscribe() *Subscription
-    &nbsp_place_holder; &nbsp_place_holder; func (c *Exchange) Subscriptors() int
+    func NewPubSub() *Exchange
+    func (c *Exchange) Publish(data interface{})
+    func (c *Exchange) Subscribe() *Subscription
+    func (c *Exchange) Subscriptors() int
     type Subscription
-    &nbsp_place_holder; &nbsp_place_holder; func (s *Subscription) Unsubscribe()
+    func (s *Subscription) Unsubscribe()
 
 
 # Package files
 
-[pub_sub.go](/target/pub_sub.go)
+[pub_sub.go](pub_sub.go)
 
-## type [Exchange](/target/pub_sub.go?s=157:225#L2)
+## type **Exchange**
 
 
     type Exchange struct {
-        [sync](/pkg/sync/).[Mutex](/pkg/sync/#Mutex)
+        sync.Mutex
         // contains filtered or unexported fields
     }
 
-### func [NewPubSub](/target/pub_sub.go?s=346:372#L13)
+### func **NewPubSub**
 
 
 ####    func NewPubSub() *Exchange
@@ -79,7 +79,7 @@ Example:
     hey
 
 
-### func (*Exchange) [Publish](/target/pub_sub.go?s=1509:1553#L60)
+### func (*Exchange) **Publish**
 
 
     func (c *Exchange) Publish(data interface{})
@@ -93,7 +93,7 @@ gorutine
     go channel.Publish("msg")
 
 
-### func (*Exchange) [Subscribe](/target/pub_sub.go?s=948:992#L42)
+### func (*Exchange) **Subscribe**
 
 
     func (c *Exchange) Subscribe() *Subscription
@@ -105,14 +105,14 @@ Subscribe to channel
     msg := <- sbuscription.C
 
 
-### func (*Exchange) [Subscriptors](/target/pub_sub.go?s=1154:1191#L49)
+### func (*Exchange) **Subscriptors**
 
 
     func (c *Exchange) Subscriptors() [int](/pkg/builtin/#int)
 
 Subscriptors return the number of subscriptors
 
-## type [Subscription](/target/pub_sub.go?s=227:302#L7)
+## type **Subscription**
 
 
     type Subscription struct {
@@ -120,7 +120,7 @@ Subscriptors return the number of subscriptors
         // contains filtered or unexported fields
     }
 
-### func (*Subscription) [Unsubscribe](/target/pub_sub.go?s=1729:1765#L70)
+### func (*Subscription)
 
 
     func (s *Subscription) Unsubscribe()
