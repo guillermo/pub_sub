@@ -5,33 +5,55 @@
 // This library provie the pub/sub pattern to the go routines
 package pub_sub
 
-import (
-	"sync"
-)
+import ()
 
 type Exchange struct {
-	mu          sync.Mutex
-	subscribers []*Subscription
+	subscribers     []*Subscription
+	subscribeChan   chan *Subscription
+	unSubscribeChan chan *Subscription
+	publishChan     chan interface{}
+	closeChannel    chan bool
+}
+
+func reciver(e *Exchange) {
+	for {
+		select {
+		case s := <-e.subscribeChan:
+			e.subscribers = append(e.subscribers, s)
+		case s := <-e.unSubscribeChan:
+			for i, subscriber := range e.subscribers {
+				if subscriber == s {
+					n := i + 1
+					left := e.subscribers[:i]
+					right := e.subscribers[n:]
+					e.subscribers = append(left, right...)
+				}
+			}
+		case msg := <-e.publishChan:
+			for _, subscriber := range e.subscribers {
+				subscriber.C <- msg
+			}
+		case _ = <-e.closeChannel:
+			break
+		}
+	}
+}
+
+// NewPubSub returns a new exchagen
+func NewPubSub() *Exchange {
+	exchange := new(Exchange)
+	exchange.subscribeChan = make(chan *Subscription)
+	exchange.unSubscribeChan = make(chan *Subscription)
+	exchange.closeChannel = make(chan bool)
+	exchange.publishChan = make(chan interface{}, 2000)
+
+	go reciver(exchange)
+	return exchange
 }
 
 type Subscription struct {
 	C        chan interface{}
 	exchange *Exchange
-}
-
-// Create a new Publish/Subscribe exchange
-func NewPubSub() *Exchange {
-	exchange := &Exchange{subscribers: make([]*Subscription, 0)}
-	return exchange
-}
-
-func (e *Exchange) unsubscribe(s *Subscription) {
-}
-
-func (c *Exchange) subscribe(s *Subscription) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.subscribers = append(c.subscribers, s)
 }
 
 // Subscribe to exchange
@@ -41,7 +63,7 @@ func (c *Exchange) subscribe(s *Subscription) {
 //
 func (e *Exchange) Subscribe() *Subscription {
 	subscription := &Subscription{make(chan interface{}), e}
-	e.subscribe(subscription)
+	e.subscribeChan <- subscription
 	return subscription
 }
 
@@ -52,25 +74,17 @@ func (e *Exchange) Subscribe() *Subscription {
 //
 //     go exchange.Publish("msg")
 //
-func (e *Exchange) Publish(data interface{}) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	for _, subscriber := range e.subscribers {
-		subscriber.C <- data
-	}
+func (e *Exchange) Publish(msg interface{}) {
+	e.publishChan <- msg
 }
 
 // Unbscribe the subscription
 // This step is necessary to skip memory leaks
 func (s *Subscription) Unsubscribe() {
-	s.exchange.mu.Lock()
-	defer s.exchange.mu.Unlock()
-	for i, subscriber := range s.exchange.subscribers {
-		if subscriber == s {
-			n := i + 1
-			left := s.exchange.subscribers[:i]
-			right := s.exchange.subscribers[n:]
-			s.exchange.subscribers = append(left, right...)
-		}
-	}
+	s.exchange.unSubscribeChan <- s
+}
+
+// Stop the gorutine for the Exchange
+func (e *Exchange) Finish() {
+	e.closeChannel <- true
 }
