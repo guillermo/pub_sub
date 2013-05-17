@@ -1,6 +1,6 @@
 // License: BSD
 
-// Publish Subscribe with go channels
+// Publish Subscribe with go exchanges
 //
 // This library provie the pub/sub pattern to the go routines
 package pub_sub
@@ -10,73 +10,67 @@ import (
 )
 
 type Exchange struct {
-	sync.Mutex
-	subscriptors [](*Subscription)
+	mu          sync.Mutex
+	subscribers []*Subscription
 }
 
 type Subscription struct {
-	C       chan (interface{})
-	channel *Exchange
+	C        chan interface{}
+	exchange *Exchange
 }
 
-// Create a new Publish/Subscribe Channel
+// Create a new Publish/Subscribe exchange
 func NewPubSub() *Exchange {
-	channel := &Exchange{subscriptors: make([](*Subscription), 0)}
-	return channel
+	exchange := &Exchange{subscribers: make([]*Subscription, 0)}
+	return exchange
 }
 
-func (c *Exchange) unsubscribe(s *Subscription) {
-	c.Lock()
-	for i, subscriber := range c.subscriptors {
-		if subscriber == s {
-			n := i + 1
-			left := c.subscriptors[:i]
-			right := c.subscriptors[n:]
-			c.subscriptors = append(left, right...)
-		}
-	}
-	c.Unlock()
+func (e *Exchange) unsubscribe(s *Subscription) {
 }
 
 func (c *Exchange) subscribe(s *Subscription) {
-	c.Lock()
-	c.subscriptors = append(c.subscriptors, s)
-	c.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.subscribers = append(c.subscribers, s)
 }
 
-// Subscribe to channel
+// Subscribe to exchange
 //
-//     subscription := channel.Subscribe()
+//     subscription := exchange.Subscribe()
 //     msg := <- sbuscription.C
 //
-func (c *Exchange) Subscribe() *Subscription {
-	subscription := &Subscription{make(chan interface{}), c}
-	c.subscribe(subscription)
+func (e *Exchange) Subscribe() *Subscription {
+	subscription := &Subscription{make(chan interface{}), e}
+	e.subscribe(subscription)
 	return subscription
 }
 
-// Subscriptors return the number of subscriptors
-func (c *Exchange) Subscriptors() int {
-	return len(c.subscriptors)
-}
-
-// Publish a message into the channel (Broadcast)
+// Publish a message into the exchange (Broadcast)
 // It will go to all the subscriptions and send individually the message
-// It will block until all the subscriptors recive the message
+// It will block until all the subscribers recive the message
 // You may want to launch this in its independent gorutine
 //
-//     go channel.Publish("msg")
+//     go exchange.Publish("msg")
 //
-func (c *Exchange) Publish(data interface{}) {
-	c.Lock()
-	for _, subscriber := range c.subscriptors {
+func (e *Exchange) Publish(data interface{}) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	for _, subscriber := range e.subscribers {
 		subscriber.C <- data
 	}
-	c.Unlock()
 }
 
 // Unbscribe the subscription
 // This step is necessary to skip memory leaks
 func (s *Subscription) Unsubscribe() {
-	s.channel.unsubscribe(s)
+	s.exchange.mu.Lock()
+	defer s.exchange.mu.Unlock()
+	for i, subscriber := range s.exchange.subscribers {
+		if subscriber == s {
+			n := i + 1
+			left := s.exchange.subscribers[:i]
+			right := s.exchange.subscribers[n:]
+			s.exchange.subscribers = append(left, right...)
+		}
+	}
 }

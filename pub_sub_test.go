@@ -50,7 +50,7 @@ func ExampleNewPubSub() {
 
 	runtime.Gosched() //Need to allocate the subscribers
 	// And start publish messages
-	for channel.Subscriptors() != 0 {
+	for channel.Subscribers() != 0 {
 		_ = <-time.After(time.Second)
 		channel.Publish("hey")
 	}
@@ -63,4 +63,8 @@ func ExampleNewPubSub() {
 	// hey
 	// hey
 
+}
+
+func (c *Exchange) Subscribers() int {
+	return len(c.subscribers)
 }

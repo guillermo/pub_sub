@@ -8,9 +8,8 @@ This library provie the pub/sub pattern to the go routines
 
     type Exchange
     func NewPubSub() *Exchange
-    func (c *Exchange) Publish(data interface{})
-    func (c *Exchange) Subscribe() *Subscription
-    func (c *Exchange) Subscriptors() int
+    func (e *Exchange) Publish(data interface{})
+    func (e *Exchange) Subscribe() *Subscription
     type Subscription
     func (s *Subscription) Unsubscribe()
 
@@ -64,12 +63,12 @@ Example:
 
     runtime.Gosched() //Need to allocate the subscribers
     // And start publish messages
-    for channel.Subscriptors() != 0 {
+    for channel.Subscribers() != 0 {
         _ = <-time.After(time.Second)
         channel.Publish("hey")
     }
 
-    Output:
+    Outputo
 
     hey
     hey
@@ -82,7 +81,7 @@ Example:
 ### func (*Exchange) **Publish**
 
 
-    func (c *Exchange) Publish(data interface{})
+    func (e *Exchange) Publish(data interface{})
 
 Publish a message into the channel (Broadcast) It will go to all the
 subscriptions and send individually the message It will block until all the
@@ -96,7 +95,7 @@ gorutine
 ### func (*Exchange) **Subscribe**
 
 
-    func (c *Exchange) Subscribe() *Subscription
+    func (e *Exchange) Subscribe() *Subscription
 
 Subscribe to channel
 
@@ -108,7 +107,7 @@ Subscribe to channel
 ### func (*Exchange) **Subscriptors**
 
 
-    func (c *Exchange) Subscriptors() [int](/pkg/builtin/#int)
+    func (e *Exchange) Subscriptors() [int](/pkg/builtin/#int)
 
 Subscriptors return the number of subscriptors
 
