@@ -37,10 +37,6 @@ Once the exchange is stop, you will need to create a new exchange.
 */
 package pub_sub
 
-import (
-	"fmt"
-)
-
 // Exchange represent the main point to deliver messages. You get one with NewPubSub()
 type Exchange struct {
 	subscribers     []*Subscription
@@ -69,7 +65,6 @@ func reciver(e *Exchange) {
 				go func() { subscriber.C <- msg }()
 			}
 		case _ = <-e.closeChannel:
-			fmt.Println("I get close")
 			break
 		}
 	}
