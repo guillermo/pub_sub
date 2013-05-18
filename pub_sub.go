@@ -1,12 +1,47 @@
 // License: BSD
 
-// Publish Subscribe with go exchanges
-//
-// This library provie the pub/sub pattern to the go routines
+/*
+Package pub_sub provides Publish Subscribe patther to gorutines
+It is an easy way to multiplex messages to many recivers/channels
+
+To define a publish/subscribe channel you first need to create the exchange:
+
+	exchange = NewPubSub()
+
+Once you created the exchange the subscribers need to subscribe to that exchange:
+
+	subscription = exchange.Subscribe()
+
+The next is the subscribers waiting for messages:
+
+	for {
+	  msg := <- subscribers.C
+	  fmt.Println(msg)
+	}
+
+Now you can publish events with:
+
+	exchange.Publish("hello")
+
+Publish send a message to every of his subscribers channels.
+
+Once you want to stop you have to cancel your subscription:
+
+	subscription.Unsubscribe()
+
+And to stop the exchange:
+
+	exchange.Stop()
+
+Once the exchange is stop, you will need to create a new exchange.
+*/
 package pub_sub
 
-import ()
+import (
+	"fmt"
+)
 
+// Exchange represent the main point to deliver messages. You get one with NewPubSub()
 type Exchange struct {
 	subscribers     []*Subscription
 	subscribeChan   chan *Subscription
@@ -31,9 +66,10 @@ func reciver(e *Exchange) {
 			}
 		case msg := <-e.publishChan:
 			for _, subscriber := range e.subscribers {
-				subscriber.C <- msg
+				go func() { subscriber.C <- msg }()
 			}
 		case _ = <-e.closeChannel:
+			fmt.Println("I get close")
 			break
 		}
 	}
@@ -56,11 +92,10 @@ type Subscription struct {
 	exchange *Exchange
 }
 
-// Subscribe to exchange
+// Subscribe generates a new subscription to the exchange. Remember to call unsubscribe.
 //
 //     subscription := exchange.Subscribe()
 //     msg := <- sbuscription.C
-//
 func (e *Exchange) Subscribe() *Subscription {
 	subscription := &Subscription{make(chan interface{}), e}
 	e.subscribeChan <- subscription
@@ -82,6 +117,7 @@ func (e *Exchange) Publish(msg interface{}) {
 // This step is necessary to skip memory leaks
 func (s *Subscription) Unsubscribe() {
 	s.exchange.unSubscribeChan <- s
+	close(s.C)
 }
 
 // Stop the gorutine for the Exchange
